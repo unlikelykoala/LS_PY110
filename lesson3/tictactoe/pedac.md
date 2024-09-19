@@ -10,6 +10,19 @@ High-level pseudocode:
     9. If yes, go to #1
     10. Goodbye!
 
+    keep score:
+    rules:
+    - no global variables
+    - possible: global constant for number of games to win match
+    algorithm:
+    1. initialize the win count for player and computer
+        - tell the player it's best of 3
+    2. increment each count depending on who wins
+    3. If someone wins twice, end of the match
+        - ask player if they're up for another match
+        - reset scores to 0
+    
+    
     join_or function:
     input: sequence, string (delimiter, default = ', '), string (conjunction, default = 'or')
     output: string (with delimiter and final conjunction)

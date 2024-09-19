@@ -1,19 +1,119 @@
 import os
 import random
 
+import cowsay
+from tabulate import tabulate
+
 
 EMPTY_MARKER = ' '
 HUMAN_MARKER = 'X'
 PC_MARKER = '◯'
+GAMES_TO_WIN = 2
+PC_NAME = 'Wilbur'
 
 
-def innit_board():
+def enter_to_continue_clear():
+    prompt('Press \'Enter\' to continue.')
+    input()
+    os.system('clear')
+
+def clear_without_enter():
+    os.system('clear')
+
+def intro():
+    clear_without_enter()
+    cowsay.pig('Oink! Oink!\n'
+               'Hello, friend!\n'
+               f'My name is {PC_NAME}.')
+    enter_to_continue_clear()
+    cowsay.pig('I\'m the tic-tac-toe champion\n of this farm!')
+    enter_to_continue_clear()
+    cowsay.pig('This will be a best of three match.')
+    enter_to_continue_clear()
+    cowsay.pig('Oh, and before we start,\n'
+               'what\'s your name, friend?')
+
+def get_player_name():
+    name = input('Name: ')
+    while not name:
+        clear_without_enter()
+        cowsay.pig('Sorry, I couldn\'t catch that.\n')
+        name = input('Name: ')
+    return name
+
+def welcome_player(name):
+    cowsay.pig(f'Welcome to Zuckerman Farm, {name}!\n'
+               'Let\'s get started!')
+    enter_to_continue_clear()
+
+def init_score_table(player_name, pc_name):
+    return [[player_name, 0], [pc_name, 0]]
+
+def update_score_table(table, winner):
+    if winner == table[0][0]:
+        table[0][1] += 1
+    else:
+        table[1][1] += 1
+
+def display_score(table):
+    print('SCOREBOARD')
+    print(tabulate(table))
+
+def check_yn_input(response):
+    while response.casefold() not in ['y', 'n']:
+        clear_without_enter()
+        cowsay.pig('Could you say that again?\n'
+                   "I couldn't make that out.")
+        response = input("Enter 'Y/y' or 'N/n': ")
+    
+    return response
+
+def response_is_y(response):
+    return bool(response.casefold() == 'y')
+
+def get_match_winner(board, player_name, pc_name):
+    if board[0][1] == GAMES_TO_WIN:
+        return player_name
+    elif board[1][1] == GAMES_TO_WIN:
+        return pc_name
+
+def is_match_winner(winner):
+    return bool(winner)
+
+def play_again():
+    cowsay.pig('Do you want to play again?\n')
+    response = check_yn_input(input("Enter 'Y/y' or 'N/n': "))
+    return bool(response_is_y(response))
+
+def player_wins_match(player_name):
+    cowsay.pig('Oink! ~sniff~ Oink!\n'
+               f'Congratulations, {player_name}. That\'s two out of three.\n'
+               f'You won the match...')
+    enter_to_continue_clear()
+    cowsay.pig('Farmer Zuckerman won\'t be happy with me...\n')
+    enter_to_continue_clear()
+
+    
+def pc_wins_match(pc_name):
+    cowsay.pig('Oink! Oink!\n'
+               "That's two out of three! I win!")
+    enter_to_continue_clear()
+    cowsay.pig(f"Looks like ol' {pc_name} avoids the frying pan\n for another day!")
+    enter_to_continue_clear()
+
+def end_of_match(winner, player_name, pc_name):
+    if winner == player_name:
+        player_wins_match(player_name)
+    else:
+        pc_wins_match(pc_name)
+
+def init_board():
     return {square: EMPTY_MARKER for square in range(1, 10)}
 
 def display_board(board):
     os.system('clear')
     
-    prompt(f"You are {HUMAN_MARKER}. Computer is {PC_MARKER}.")
+    prompt(f"You are {HUMAN_MARKER}. {PC_NAME} is {PC_MARKER}.")
     print()
     print('     |     |')
     print(f'  {board[1]}  |  {board[2]}  |  {board[3]}')
@@ -67,7 +167,7 @@ def computer_chooses_square(board):
     square = random.choice(empty_squares(board))
     board[square] = PC_MARKER
 
-def detect_winner(board):
+def detect_winner(board, player_name, pc_name):
     winning_lines = [
         [1, 2, 3], [4, 5, 6], [7, 8, 9],
         [1, 4, 7], [2, 5, 8], [3, 6, 9],
@@ -79,49 +179,67 @@ def detect_winner(board):
         if (board[sq1] == HUMAN_MARKER
             and board[sq2] == HUMAN_MARKER
             and board[sq3] == HUMAN_MARKER):
-            return 'Player'
+            return player_name
         elif (board[sq1] == PC_MARKER
             and board[sq2] == PC_MARKER
             and board[sq3] == PC_MARKER):
-            return 'Computer'
+            return pc_name
         
     return None
 
-def someone_one(board):
-    return bool(detect_winner(board))
+def someone_won(board, player_name, pc_name):
+    return bool(detect_winner(board, player_name, pc_name))
 
 def board_full(board):
     return len(empty_squares(board)) == 0
 
 def play_tictactoe():
+    intro()
+    player_name = get_player_name()
+    clear_without_enter()
+    welcome_player(player_name)
+
+    score_table = init_score_table(player_name, PC_NAME)
+
     while True:
-        board = innit_board()
+        board = init_board()
         display_board(board)
 
         while True:
             player_chooses_square(board)
             display_board(board)
 
-            if someone_one(board) or board_full(board):
+            if someone_won(board, player_name, PC_NAME) or board_full(board):
                 break
 
             computer_chooses_square(board)
             display_board(board)
 
-            if someone_one(board) or board_full(board):
+            if someone_won(board, player_name, PC_NAME) or board_full(board):
                 break
 
-        if someone_one(board):
-            prompt(f'{detect_winner(board)} won!')
+        if someone_won(board, player_name, PC_NAME):
+            winner = detect_winner(board, player_name, PC_NAME)
+            update_score_table(score_table, winner)
+            prompt(f'{winner} won!')
+            enter_to_continue_clear()
+            display_score(score_table)
+            enter_to_continue_clear()
         else:
             prompt('It\'s a tie!')
+            enter_to_continue_clear()
+            display_score(score_table)
+            enter_to_continue_clear()
 
-        prompt('Play again? (y or n)')
-        answer = input().lower()
+        if is_match_winner(get_match_winner(score_table, player_name, PC_NAME)):
+            match_winner = get_match_winner(score_table, player_name, PC_NAME)
+            end_of_match(match_winner, player_name, PC_NAME)
+            if play_again():
+                play_tictactoe()
+            else:
+                break
 
-        if answer[0] != 'y':
-            break
-    
+    clear_without_enter()
     prompt('Thanks for playing Tic Tac Toe!')
 
 
