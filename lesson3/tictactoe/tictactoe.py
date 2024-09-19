@@ -1,5 +1,6 @@
 import os
 import random
+import time
 
 import cowsay
 from tabulate import tabulate
@@ -10,7 +11,16 @@ HUMAN_MARKER = 'X'
 PC_MARKER = '◯'
 GAMES_TO_WIN = 2
 PC_NAME = 'Wilbur'
+MIDDLE_SQUARE = 5
+WINNING_LINES = [
+    [1, 2, 3], [4, 5, 6], [7, 8, 9],    # horizontal
+    [1, 4, 7], [2, 5, 8], [3, 6, 9],    # vertical
+    [1, 5, 9], [3, 5, 7]                # diagonal
+]
 
+def enter_to_continue():
+    prompt('Press \'Enter\' to continue.')
+    input()
 
 def enter_to_continue_clear():
     prompt('Press \'Enter\' to continue.')
@@ -28,12 +38,54 @@ def intro():
     enter_to_continue_clear()
     cowsay.pig('I\'m the tic-tac-toe champion\n of this farm!')
     enter_to_continue_clear()
-    cowsay.pig('This will be a best of three match.')
+    if player_wants_instructions():
+        display_instructions()
+    else:
+        cowsay.pig('Suit yourself!')
     enter_to_continue_clear()
-    cowsay.pig('Oh, and before we start,\n'
-               'what\'s your name, friend?')
+    cowsay.pig(f'To win the match, you have to get {GAMES_TO_WIN} wins.')
+    enter_to_continue_clear()
+    
+
+def player_wants_instructions():
+    cowsay.pig('Would you like to see the instructions?')
+    response = input("Press 'Y/y' or 'N/n': ")
+    while response.casefold() not in ['y', 'n']:
+        clear_without_enter()
+        cowsay.pig('Sorry, I couldn\'t catch that.\n')
+        response = input("Press 'Y/y' or 'N/n': ")
+    clear_without_enter()
+    return bool(response.casefold() == 'y')
+
+def display_instructions():
+    prompt('Each round you will pick a square to put your marker.')
+    enter_to_continue()
+
+    prompt('Place 3 of your markers in a row to win.\n'
+           '(vertically, horizontally, or diagonally)')
+    enter_to_continue()
+
+    prompt('You will use the numbers below to choose the square:')
+    print()
+    time.sleep(0.2)
+
+    print("EXAMPLE BOARD")
+    print("     |     |")
+    print(f"  {1}  |  {2}  |  {3}")
+    print("     |     |")
+    print("-----+-----+-----")
+    print("     |     |")
+    print(f"  {4}  |  {5}  |  {6}")
+    print("     |     |")
+    print("-----+-----+-----")
+    print("     |     |")
+    print(f"  {7}  |  {8}  |  {9}")
+    print("     |     |")
+    print()
 
 def get_player_name():
+    cowsay.pig('Oh, and before we start,\n'
+               'what\'s your name, friend?')
     name = input('Name: ')
     while not name:
         clear_without_enter()
@@ -42,9 +94,45 @@ def get_player_name():
     return name
 
 def welcome_player(name):
-    cowsay.pig(f'Welcome to Zuckerman Farm, {name}!\n'
-               'Let\'s get started!')
+    cowsay.pig(f'Welcome to Zuckerman Farm, {name}!')
     enter_to_continue_clear()
+
+def get_difficulty():
+    cowsay.pig(f'Tell me, how easy should I take it on you?\n'
+               '1 is easy, 2 is medium, and 3 is hard.')
+
+    difficulty = input('Enter 1, 2, or 3: ')
+    while difficulty not in ['1', '2', '3']:
+        clear_without_enter()
+        cowsay.pig('Sorry, I couldn\'t catch that.\n'
+                   '1 is easy, 2 is medium, and 3 is hard.')
+        difficulty = input('Enter 1, 2, or 3: ')
+    clear_without_enter()
+    return difficulty
+
+def get_current_player(player_name, pc_name):
+    cowsay.pig('We will alternate who goes first each round.')
+    enter_to_continue_clear()
+    cowsay.pig("I'm a gentlepig so I'll let you choose.\n"
+               "Will you go first in Round 1?")
+    prompt("Press '1' to go first or '2' to go second:")
+    response = input()
+    while response not in ['1', '2']:
+        cowsay.pig("Speak up!\n"
+                   "I can't hear you!")
+        prompt("Press '1' to go first or '2' to go second:")
+        response = input()
+        clear_without_enter()   
+    if response == '1':
+        return player_name
+    else:
+        return pc_name
+
+def switch_current_player(current_player, player_name, pc_name):
+    if current_player == player_name:
+        return pc_name
+    else:
+        return player_name
 
 def init_score_table(player_name, pc_name):
     return [[player_name, 0], [pc_name, 0]]
@@ -147,6 +235,11 @@ def join_or(seq, delimiter=', ', conjunction='or'):
 
     return full_str
 
+def choose_square(board, current_player, difficulty):
+    if current_player == PC_NAME:
+        computer_chooses_square(board, difficulty)
+    else:
+        player_chooses_square(board)
 
 def player_chooses_square(board):
     while True:
@@ -161,20 +254,37 @@ def player_chooses_square(board):
     
     board[int(square)] = HUMAN_MARKER
 
-def computer_chooses_square(board):
+def computer_chooses_square(board, difficulty):
     if len(empty_squares(board)) == 0:
         return
-    square = random.choice(empty_squares(board))
+    square = None
+    if difficulty == '2':
+        square = return_winner_or_at_risk_square(board, PC_MARKER)
+    
+    if not square:
+        square = return_winner_or_at_risk_square(board, HUMAN_MARKER)
+
+    if not square and board[5] == EMPTY_MARKER:
+        square = MIDDLE_SQUARE
+    
+    if not square:
+        square = random.choice(empty_squares(board))
+    
     board[square] = PC_MARKER
 
-def detect_winner(board, player_name, pc_name):
-    winning_lines = [
-        [1, 2, 3], [4, 5, 6], [7, 8, 9],
-        [1, 4, 7], [2, 5, 8], [3, 6, 9],
-        [1, 5, 9], [3, 5, 7]
-    ]
+def return_winner_or_at_risk_square(board, marker):
+    for line in WINNING_LINES:
+        markers_in_line = [board[square] for square in line]
 
-    for line in winning_lines:
+        if markers_in_line.count(marker) == 2:
+            for square in line:
+                if board[square] == EMPTY_MARKER:
+                    return square
+                
+    return None
+
+def detect_winner(board, player_name, pc_name):
+    for line in WINNING_LINES:
         sq1, sq2, sq3 = line
         if (board[sq1] == HUMAN_MARKER
             and board[sq2] == HUMAN_MARKER
@@ -195,9 +305,14 @@ def board_full(board):
 
 def play_tictactoe():
     intro()
+    
     player_name = get_player_name()
     clear_without_enter()
     welcome_player(player_name)
+
+    difficulty = get_difficulty()
+
+    current_player = get_current_player(player_name, PC_NAME)
 
     score_table = init_score_table(player_name, PC_NAME)
 
@@ -206,15 +321,10 @@ def play_tictactoe():
         display_board(board)
 
         while True:
-            player_chooses_square(board)
+            choose_square(board, current_player, difficulty)
             display_board(board)
-
-            if someone_won(board, player_name, PC_NAME) or board_full(board):
-                break
-
-            computer_chooses_square(board)
-            display_board(board)
-
+            current_player = switch_current_player(current_player, player_name, PC_NAME)
+            time.sleep(0.3)
             if someone_won(board, player_name, PC_NAME) or board_full(board):
                 break
 
