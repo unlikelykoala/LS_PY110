@@ -12,7 +12,6 @@ PC_MARKER = '◯'
 GAMES_TO_WIN = 2
 PC_NAME = 'Wilbur'
 MIDDLE_SQUARE = 5
-HARD = '3'
 MEDIUM = '2'
 WINNING_LINES = [
     [1, 2, 3], [4, 5, 6], [7, 8, 9],    # horizontal
@@ -53,7 +52,8 @@ def player_wants_instructions():
     response = input("Press 'Y/y' or 'N/n': ")
     while response.casefold() not in ['y', 'n']:
         clear_without_enter()
-        cowsay.pig('Sorry, I couldn\'t catch that.\n')
+        cowsay.pig('Sorry, I couldn\'t catch that.\n'
+                   'Would you like to see the instructions?')
         response = input("Press 'Y/y' or 'N/n': ")
     clear_without_enter()
     return bool(response.casefold() == 'y')
@@ -100,14 +100,13 @@ def welcome_player(name):
 
 def get_difficulty():
     cowsay.pig('Tell me, how easy should I take it on you?\n'
-               '1 is easy, 2 is medium, and 3 is hard.')
-
-    difficulty = input('Enter 1, 2, or 3: ')
-    while difficulty not in ['1', '2', '3']:
+               '1 is easy and 2 is medium.')
+    difficulty = input('Enter 1 or 2: ')
+    while difficulty not in ['1', '2']:
         clear_without_enter()
         cowsay.pig('Sorry, I couldn\'t catch that.\n'
-                   '1 is easy, 2 is medium, and 3 is hard.')
-        difficulty = input('Enter 1, 2, or 3: ')
+                   '1 is easy and 2 is medium.')
+        difficulty = input('Enter 1 or 2: ')
     clear_without_enter()
     return difficulty
 
@@ -118,9 +117,10 @@ def get_current_player(player_name, pc_name):
                "Will you go first in Round 1?")
     prompt("Press '1' to go first or '2' to go second:")
     response = input()
+    clear_without_enter()
     while response not in ['1', '2']:
-        cowsay.pig("Speak up!\n"
-                   "I can't hear you!")
+        cowsay.pig("Speak up! I can't hear you!\n"
+                   "Will you go first in Round 1?")
         prompt("Press '1' to go first or '2' to go second:")
         response = input()
         clear_without_enter()
@@ -150,7 +150,8 @@ def check_yn_input(response):
     while response.casefold() not in ['y', 'n']:
         clear_without_enter()
         cowsay.pig('Could you say that again?\n'
-                   "I couldn't make that out.")
+                   "I couldn't make that out./n"
+                   "Shall we play again?")
         response = input("Enter 'Y/y' or 'N/n': ")
 
     return response
@@ -247,10 +248,15 @@ def player_chooses_square(board):
         prompt(f'Choose a square ({join_or(valid_choices)})')
         square = input().strip()
 
-        if square in valid_choices:
-            break
+        while square not in valid_choices:
+            clear_without_enter()
+            display_board(board)
+            prompt('Sorry, that\'s not a valid choice.')
+            print()
+            prompt(f'Choose a square ({join_or(valid_choices)})')
+            square = input().strip()
 
-        prompt('Sorry, that\'s not a valid choice.')
+        break
 
     board[int(square)] = HUMAN_MARKER
 
