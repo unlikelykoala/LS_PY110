@@ -93,7 +93,9 @@ Compare cards algorithm:
     - play again?
 
 Using player turn and dealer turn to decide winner and display results:
-1. 
+1. player turn:
+    - player busts, or decides to hit or stay
+    - if bust
 
 
 NOTE: I need to fix the ace_total algorith
